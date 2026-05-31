@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: lab07-microservices
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: lab07-microservices
+    app.kubernetes.io/part-of: devops-labs
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/babenkoandrii1623-beep/devops-final-project.git
+    targetRevision: main
+    path: helm/lab-microservices
+    helm:
+      valueFiles:
+        - values-lab07.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: lab07
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
