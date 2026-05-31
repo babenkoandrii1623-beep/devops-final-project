@@ -20,6 +20,10 @@ spec:
         {{- include "lab-microservices.labels" . | nindent 8 }}
         app.kubernetes.io/component: backend
     spec:
+      {{- if .Values.security.serviceAccounts.enabled }}
+      serviceAccountName: {{ include "lab-microservices.backendServiceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.security.serviceAccounts.automountServiceAccountToken }}
+      {{- end }}
       {{- with .Values.backend.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}

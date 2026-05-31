@@ -85,6 +85,8 @@ database:
     limits:
       cpu: 500m
       memory: 512Mi
+  podSecurityContext: {}
+  containerSecurityContext: {}
 
 ingress:
   enabled: true
@@ -98,3 +100,12 @@ ingress:
   tls:
     enabled: false
     secretName: lab03-tls
+
+security:
+  serviceAccounts:
+    enabled: false
+    automountServiceAccountToken: false
+  rbac:
+    enabled: false
+  networkPolicies:
+    enabled: false

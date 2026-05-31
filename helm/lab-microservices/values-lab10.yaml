@@ -1,0 +1,61 @@
+nameOverride: ""
+fullnameOverride: ""
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: lab02-microservices-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+
+backend:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  image:
+    repository: lab02-microservices-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    capabilities:
+      drop:
+        - ALL
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+database:
+  auth:
+    database: tasksdb
+    username: app
+    password: app_password
+  persistence:
+    enabled: true
+    size: 1Gi
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+
+ingress:
+  enabled: false
+
+security:
+  serviceAccounts:
+    enabled: true
+    automountServiceAccountToken: false
+  rbac:
+    enabled: true
+  networkPolicies:
+    enabled: true

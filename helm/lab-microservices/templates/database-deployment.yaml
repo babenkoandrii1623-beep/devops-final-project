@@ -20,6 +20,14 @@ spec:
         {{- include "lab-microservices.labels" . | nindent 8 }}
         app.kubernetes.io/component: database
     spec:
+      {{- if .Values.security.serviceAccounts.enabled }}
+      serviceAccountName: {{ include "lab-microservices.databaseServiceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.security.serviceAccounts.automountServiceAccountToken }}
+      {{- end }}
+      {{- with .Values.database.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: database
           image: "{{ .Values.database.image.repository }}:{{ .Values.database.image.tag }}"
@@ -62,6 +70,10 @@ spec:
               subPath: postgres-data
             - name: init-sql
               mountPath: /docker-entrypoint-initdb.d
+          {{- with .Values.database.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.database.resources | nindent 12 }}
       volumes:
@@ -76,4 +88,3 @@ spec:
           configMap:
             name: {{ include "lab-microservices.databaseInitConfigName" . }}
 {{- end }}
-

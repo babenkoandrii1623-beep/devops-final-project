@@ -60,3 +60,14 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- printf "%s-db-init" (include "lab-microservices.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "lab-microservices.frontendServiceAccountName" -}}
+{{- printf "%s-sa" (include "lab-microservices.frontendName" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "lab-microservices.backendServiceAccountName" -}}
+{{- printf "%s-sa" (include "lab-microservices.backendName" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "lab-microservices.databaseServiceAccountName" -}}
+{{- printf "%s-sa" (include "lab-microservices.databaseName" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
