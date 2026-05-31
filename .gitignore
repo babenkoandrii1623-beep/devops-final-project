@@ -1,0 +1,11 @@
+.env
+node_modules
+dist
+coverage
+*.log
+*.tar
+*.tar.gz
+*.tgz
+.DS_Store
+.vscode
+.idea

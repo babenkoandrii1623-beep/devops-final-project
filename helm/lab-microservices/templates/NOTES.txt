@@ -1,0 +1,21 @@
+Lab microservices chart was installed.
+
+Release:
+  {{ .Release.Name }}
+
+Namespace:
+  {{ .Release.Namespace }}
+
+Check resources:
+  kubectl get pods,svc,ingress,pvc -n {{ .Release.Namespace }}
+
+Local frontend demo with port-forward:
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "lab-microservices.frontendName" . }} 8080:80
+
+Then open:
+  http://localhost:8080
+
+Local backend health check:
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "lab-microservices.backendName" . }} 3001:3000
+  curl.exe http://localhost:3001/health
+

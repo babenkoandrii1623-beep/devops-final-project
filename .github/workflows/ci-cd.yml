@@ -1,0 +1,191 @@
+name: Lab 06 CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  NODE_VERSION: "22"
+  DEPLOY_NAMESPACE: lab06
+  RELEASE_NAME: lab06
+
+jobs:
+  test:
+    name: Build and test application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm install
+
+      - name: Test backend
+        working-directory: backend
+        run: npm test
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Build and test frontend
+        working-directory: frontend
+        run: npm test
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Validate Helm chart
+        run: helm lint ./helm/lab-microservices
+
+  docker-build:
+    name: Build Docker images
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          tags: lab02-microservices-backend:${{ github.sha }}
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: false
+          tags: lab02-microservices-frontend:${{ github.sha }}
+
+  push-images:
+    name: Push images to GHCR
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare image names
+        shell: bash
+        run: |
+          repository="${GITHUB_REPOSITORY,,}"
+          echo "BACKEND_IMAGE=ghcr.io/${repository}/backend" >> "$GITHUB_ENV"
+          echo "FRONTEND_IMAGE=ghcr.io/${repository}/frontend" >> "$GITHUB_ENV"
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+            ${{ env.BACKEND_IMAGE }}:latest
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+            ${{ env.FRONTEND_IMAGE }}:latest
+
+  deploy:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    needs: push-images
+    if: github.event_name != 'pull_request'
+    environment: lab06
+    env:
+      KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare image names
+        shell: bash
+        run: |
+          repository="${GITHUB_REPOSITORY,,}"
+          echo "BACKEND_IMAGE=ghcr.io/${repository}/backend" >> "$GITHUB_ENV"
+          echo "FRONTEND_IMAGE=ghcr.io/${repository}/frontend" >> "$GITHUB_ENV"
+
+      - name: Skip deploy when KUBE_CONFIG is not configured
+        if: env.KUBE_CONFIG_DATA == ''
+        run: |
+          echo "KUBE_CONFIG secret is not configured. Build, test and push completed; deploy skipped."
+
+      - name: Configure kubeconfig
+        if: env.KUBE_CONFIG_DATA != ''
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "$KUBE_CONFIG_DATA" | base64 -d > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+
+      - name: Setup Helm
+        if: env.KUBE_CONFIG_DATA != ''
+        uses: azure/setup-helm@v4
+
+      - name: Setup kubectl
+        if: env.KUBE_CONFIG_DATA != ''
+        uses: azure/setup-kubectl@v4
+
+      - name: Deploy application with Helm
+        if: env.KUBE_CONFIG_DATA != ''
+        run: |
+          helm upgrade --install "$RELEASE_NAME" ./helm/lab-microservices \
+            --namespace "$DEPLOY_NAMESPACE" \
+            --create-namespace \
+            -f ./helm/lab-microservices/values-lab06.yaml \
+            --set frontend.image.repository="$FRONTEND_IMAGE" \
+            --set frontend.image.tag="${GITHUB_SHA}" \
+            --set backend.image.repository="$BACKEND_IMAGE" \
+            --set backend.image.tag="${GITHUB_SHA}"
+
+      - name: Show deployed resources
+        if: env.KUBE_CONFIG_DATA != ''
+        run: |
+          helm status "$RELEASE_NAME" -n "$DEPLOY_NAMESPACE"
+          kubectl get pods,svc,deploy,hpa -n "$DEPLOY_NAMESPACE"

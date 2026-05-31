@@ -1,0 +1,19 @@
+{{- if and .Values.database.enabled .Values.database.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "lab-microservices.databaseName" . }}-data
+  labels:
+    {{- include "lab-microservices.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.database.persistence.storageClassName }}
+  storageClassName: {{ .Values.database.persistence.storageClassName | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.database.persistence.size }}
+{{- end }}
+

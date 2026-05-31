@@ -1,0 +1,100 @@
+nameOverride: ""
+fullnameOverride: ""
+
+frontend:
+  enabled: true
+  nameOverride: frontend
+  replicaCount: 1
+  image:
+    repository: lab02-microservices-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+  podSecurityContext: {}
+  containerSecurityContext: {}
+
+backend:
+  enabled: true
+  nameOverride: backend
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 50
+  image:
+    repository: lab02-microservices-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  containerPort: 3000
+  service:
+    type: ClusterIP
+    port: 3000
+    targetPort: 3000
+  env:
+    NODE_ENV: production
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+
+database:
+  enabled: true
+  nameOverride: database
+  image:
+    repository: postgres
+    tag: 16-alpine
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 5432
+    targetPort: 5432
+  auth:
+    database: tasksdb
+    username: app
+    password: app_password
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClassName: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: lab03.local
+  frontendPath: /
+  apiPath: /api
+  pathType: Prefix
+  tls:
+    enabled: false
+    secretName: lab03-tls

@@ -1,0 +1,40 @@
+nameOverride: ""
+fullnameOverride: ""
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: lab02-microservices-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+
+backend:
+  replicaCount: 1
+  image:
+    repository: lab02-microservices-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+
+database:
+  auth:
+    database: tasksdb
+    username: app
+    password: app_password
+  persistence:
+    enabled: true
+    size: 1Gi
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: lab04.local
+  frontendPath: /
+  apiPath: /api
+  pathType: Prefix
+  tls:
+    enabled: true
+    secretName: lab04-tls
+

@@ -1,0 +1,40 @@
+nameOverride: ""
+fullnameOverride: ""
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: lab02-microservices-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+
+backend:
+  replicaCount: 1
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 30
+  image:
+    repository: lab02-microservices-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+database:
+  auth:
+    database: tasksdb
+    username: app
+    password: app_password
+  persistence:
+    enabled: true
+    size: 1Gi
+
+ingress:
+  enabled: false

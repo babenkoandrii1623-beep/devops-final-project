@@ -1,0 +1,7 @@
+apiVersion: v2
+name: lab-microservices
+description: Helm chart for the Lab 02 microservices application
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
