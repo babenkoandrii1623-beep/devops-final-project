@@ -1,0 +1,17 @@
+name_prefix  = "lab08"
+environment  = "dev"
+namespace    = "lab08"
+kube_context = "docker-desktop"
+
+network_cidr = "10.80.0.0/16"
+subnet_cidr  = "10.80.1.0/24"
+vm_count     = 2
+vm_size      = "dev-small"
+
+frontend_image_repository  = "lab02-microservices-frontend"
+frontend_image_tag         = "latest"
+frontend_image_pull_policy = "IfNotPresent"
+
+backend_image_repository  = "lab02-microservices-backend"
+backend_image_tag         = "latest"
+backend_image_pull_policy = "IfNotPresent"

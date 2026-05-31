@@ -9,3 +9,9 @@ coverage
 .DS_Store
 .vscode
 .idea
+.terraform/
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+.terraform.lock.hcl
